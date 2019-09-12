@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 def plot_fit_vs_data(data, distribution, params, bins=100, save=False, file_name="qq_plot.png"):
     fig = plt.figure(figsize=(12, 9))
     dist = getattr(scipy.stats, distribution)
+    print(params)
     x = np.linspace(dist.ppf(0.001, *params), dist.ppf(0.999, *params))
     plt.plot(x, dist.pdf(x, *params), label="Fitted data")
     plt.hist(data, bins=bins, label="Input data", normed=True, color="blue", alpha=0.5)

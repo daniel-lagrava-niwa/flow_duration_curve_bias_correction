@@ -1,9 +1,11 @@
 import scipy.stats
 import pandas as pd
+import numpy as np
 
 
 def calculate_aic(data, distribution, params):
-    LLH = distribution.logpdf(data, *params).max()
+    LLH = distribution.logpdf(data, *params).sum()
+    print(distribution.logpdf(data, *params))
     print(distribution, params, LLH)
     k = len(params)
     return 2 * k - 2 * LLH
@@ -41,9 +43,12 @@ if __name__ == "__main__":
     import DistributionFitter
 
     s = 0.1
-    values = scipy.stats.lognorm.rvs(s, size=1000)
+    values = np.random.gamma(0.1, size=1000)
     fitter = DistributionFitter.DistributionFitter(values)
     fitter.fit()
     fitted_parameters = fitter.fitted_parameters
 
-    print(compute_statistical_tests(values, fitted_parameters))
+    statistical_tests = compute_statistical_tests(values, fitted_parameters)
+    print(statistical_tests)
+    best_dist = statistical_tests.loc[statistical_tests.aic == statistical_tests['aic'].min()]
+    print(best_dist['distribution'])

@@ -13,7 +13,7 @@ class DistributionFitter:
     """
     def __init__(self, values, distributions=None):
         self.values = values
-        self.distributions = ["genextreme", "lognorm", "gompertz", "pearson3", "gumbel_r", "gamma"]
+        self.distributions = ["genextreme", "lognorm", "pearson3"]
         if distributions is not None:
             self.distributions = distributions
         self.fit_failed = True
