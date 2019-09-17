@@ -21,11 +21,10 @@ def calculate_FDC_from_data(data):
     probabilities = np.linspace(0, 1, len(copy_data))
     return probabilities, copy_data
 
+
 def calculate_FDC_from_distribution(distribution, params, size=1000):
     dist = getattr(scipy.stats, distribution)
-    random_values = dist.rvs(*params, size=size) * -1.
-    random_values.sort()
-    random_values = -1. * random_values
+    random_values = dist.rvs(*params, size=size).sort()[::-1]
     probabilities = np.linspace(0, 1, len(random_values))
     return probabilities, random_values
 
@@ -35,15 +34,40 @@ def sample_data(original_data, size=1000):
         return original_data.copy()
 
     sampled_values = np.zeros(size)
+    sorted_original_data = np.copy(original_data).copy()[::-1]
+    probabilities_original_data = np.linspace(0, 1, len(original_data))
+    probabilities_sampled_values = np.linspace(0, 1, size)
 
-    probabilities = np.linspace(0, 1, size)
-    original_probabilities = np.linspace(1, 0, len(original_data))
-
-    for i in np.arange(len(probabilities)):
-        idx = (np.abs(original_probabilities - probabilities[i])).argmin()
-        sampled_values[i] = [idx]
+    for i in np.arange(size):
+        idx = (np.abs(probabilities_original_data - probabilities_sampled_values[i])).argmin()
+        sampled_values[i] = sorted_original_data[idx]
 
     return sampled_values
+
+
+def calculate_chebyshev_nodes(n):
+    k = np.arange(1, n)
+    a = 0.
+    b = 1.
+    x_k = (a + b) / 2. + (b - a) / 2. * np.cos(2. * k - 1 / (2. * n) * np.pi)
+
+    return x_k.sort()[::-1]
+
+
+def sample_data_chebyshev(original_data, size=1000):
+    # Calculate the chebyshev nodes
+    x_k = calculate_chebyshev_nodes(size)
+
+    sampled_values = np.zeros(size)
+    sorted_original_data = np.sort(original_data)[::-1]
+    probabilities_original_data = np.linspace(0, 1, len(original_data))
+
+    # Same algorithm as before
+    for i in np.arange(size):
+        idx = (np.abs(probabilities_original_data - x_k[i])).argmin()
+        sampled_values[i] = sorted_original_data[idx]
+
+    return x_k, sampled_values
 
 
 
