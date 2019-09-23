@@ -1,8 +1,7 @@
 import argparse
-import xarray as xr
 import numpy as np
 import pandas as pd
-import PreProcessing
+import fitting.PreProcessing as PreProcessing
 import yaml
 import matplotlib.pyplot as plt
 
@@ -41,7 +40,7 @@ for entry in np.arange(len(expected_values)):
     predicted_params = predicted_row.loc[["param0","param1","param2"]].to_list()
 
     index_expected = int(expected_row["Unnamed: 0"])
-    reach_id = int(original_estimations.iloc[index_expected]["reach_id"])
+    reach_id = int(original_estimations.iloc[index_expected]["NZReach"])
     print(index_expected, reach_id)
 
     expected_dist = expected_row.loc[encoded_distributions].idxmax()
@@ -59,12 +58,12 @@ for entry in np.arange(len(expected_values)):
     expected_p, expected_FDC = PreProcessing.calculate_FDC_from_distribution(expected_dist, expected_params)
     predicted_p, predicted_FDC = PreProcessing.calculate_FDC_from_distribution(predicted_dist, predicted_params)
 
-    original_values = original_time_series.iloc[entry].to_numpy()
+    original_values = original_time_series.iloc[index_expected].to_numpy()
     original_p, original_data = PreProcessing.calculate_FDC_from_data(original_values)
 
-    plt.plot(original_p[5:], original_data[5:], label="original")
-    plt.plot(expected_p[5:], expected_FDC[5:], label="expected")
-    plt.plot(predicted_p[5:], predicted_FDC[5:], label="predicted")
+    plt.plot(original_p[:], original_data[:], label="original")
+    plt.plot(expected_p[:], expected_FDC[:], label="expected")
+    plt.plot(predicted_p[:], predicted_FDC[:], label="predicted")
 
     plt.legend()
     plt.show()

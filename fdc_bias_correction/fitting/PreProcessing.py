@@ -24,7 +24,7 @@ def calculate_FDC_from_data(data):
 
 def calculate_FDC_from_distribution(distribution, params, size=1000):
     dist = getattr(scipy.stats, distribution)
-    random_values = dist.rvs(*params, size=size).sort()[::-1]
+    random_values = np.sort(dist.rvs(*params, size=size))[::-1]
     probabilities = np.linspace(0, 1, len(random_values))
     return probabilities, random_values
 
@@ -34,7 +34,7 @@ def sample_data(original_data, size=1000):
         return original_data.copy()
 
     sampled_values = np.zeros(size)
-    sorted_original_data = np.copy(original_data).copy()[::-1]
+    sorted_original_data = np.sort(original_data)[::-1]
     probabilities_original_data = np.linspace(0, 1, len(original_data))
     probabilities_sampled_values = np.linspace(0, 1, size)
 
@@ -70,7 +70,6 @@ def sample_data_chebyshev(original_data, size=1000):
     return x_k, sampled_values
 
 
-
 def select_complete_years(station, dataset, max_missing_days=30, min_valid_years=6, start_year=1972, end_year=2015):
     valid_years = 0
     data = []
@@ -84,7 +83,7 @@ def select_complete_years(station, dataset, max_missing_days=30, min_valid_years
 
         data += list(yearly_data.data[np.where(yearly_data.mask != True)])
         valid_years += 1
-
+    print("Valid years: %i" % valid_years)
     if valid_years >= min_valid_years:
         return np.array(data)
 
@@ -93,13 +92,15 @@ def select_complete_years(station, dataset, max_missing_days=30, min_valid_years
 
 if __name__ == "__main__":
     # Testing the cleaning
-    data = scipy.stats.norm.rvs(size=1000)
-    scaled_data, mean, std = scale_data(data)
-    original_data = original_data_from_scaled(scaled_data, mean, std)
-
-    p, v = calculate_FDC_from_data(scaled_data)
     import matplotlib.pyplot as plt
+
+    data = scipy.stats.norm.rvs(size=1000)
+    sampled_data = sample_data(data, size=100)
+
+    p, v = calculate_FDC_from_data(data)
+    p_s, v_s = calculate_FDC_from_data(sampled_data)
     plt.plot(p, v)
+    plt.plot(p_s, v_s, marker="o")
     plt.show()
 
     p, v = calculate_FDC_from_distribution("lognorm", [0.1,0.0,0.25])

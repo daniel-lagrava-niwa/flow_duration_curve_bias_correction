@@ -5,8 +5,6 @@ import numpy as np
 
 def calculate_aic(data, distribution, params):
     LLH = distribution.logpdf(data, *params).sum()
-    print(distribution.logpdf(data, *params))
-    print(distribution, params, LLH)
     k = len(params)
     return 2 * k - 2 * LLH
 
