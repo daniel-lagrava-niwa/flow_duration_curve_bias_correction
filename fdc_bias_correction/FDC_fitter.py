@@ -28,7 +28,7 @@ args = parse_arguments()
 f = open("original_values.csv", "w")
 df = pd.DataFrame(columns=["reach_id", "distribution", "param0","param1","param2"])
 
-distribution = ["lognorm"]
+distribution = ["genextreme"]
 current_station = 0
 
 logging.basicConfig(filename="_".join(distribution) + ".log", level=logging.INFO )
@@ -60,7 +60,7 @@ for nc_file in nc_files:
                 logging.info("%i: not on selected sites" % reach_id)
                 continue
 
-        values = PreProcessing.select_complete_years(station, DS, min_valid_years=5)
+        values = PreProcessing.select_complete_years(station, DS, min_valid_years=4, max_missing_days=60)
         if values is None:
             # print("%i Nothing to be done, not enough values" % reach_id)
             logging.info("%i: not enough data to continue" % reach_id)
@@ -68,11 +68,12 @@ for nc_file in nc_files:
 
         # Normalize by area
         upstream_area = sites_to_consider.loc[sites_to_consider.NZReach == reach_id]["usArea"].values[0]
-        log10_upstream_area = np.log10(upstream_area)
-        values_std = values / log10_upstream_area
+        # log10_upstream_area = np.log10(upstream_area)
+        # values_std = values / log10_upstream_area
+        values_std = values / upstream_area
 
         if args.sample_data:
-            values_std = PreProcessing.sample_data(values, size=100)
+            values_std = PreProcessing.sample_data(values, size=101)
 
         # Writing the original values
         f.write(",".join(list(map(str, values_std))) + "\n")

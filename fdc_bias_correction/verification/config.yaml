@@ -1,5 +1,5 @@
 inputs:
-  original_data: "/home/lagravasandovald/Documents/flow_duration_curve_bias_correction/fdc_bias_correction/original_values.csv"
+  original_data: "/home/lagravasandovald/Documents/flow_duration_curve_bias_correction/fdc_bias_correction/output-lognorm-usArea/original_values.csv"
   original_estimations: "/home/lagravasandovald/Documents/flow_duration_curve_bias_correction/fdc_bias_correction/generalization/merged.csv"
   expected_estimations: "/home/lagravasandovald/Documents/flow_duration_curve_bias_correction/fdc_bias_correction/generalization/expected_test.csv"
   predicted_estimations: "/home/lagravasandovald/Documents/flow_duration_curve_bias_correction/fdc_bias_correction/generalization/predicted_test.csv"
