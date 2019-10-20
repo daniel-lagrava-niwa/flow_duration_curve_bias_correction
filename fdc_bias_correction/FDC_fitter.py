@@ -6,6 +6,7 @@ import logging
 import glob
 import os
 import math
+import scipy.stats
 
 import fitting.DistributionFitter as DistributionFitter
 import fitting.DistributionSelector as DistributionSelector
@@ -17,7 +18,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_directory", help="directory containing netCDF files containing the river flow")
     parser.add_argument("-considered_sites", help="file containing the sites to consider", default=None)
-    parser.add_argument("--sample_data", action='store_true')
+    parser.add_argument("--sample_number", type=int, default=101)
     parser.add_argument("--create_plots", action='store_true')
     args = parser.parse_args()
     return args
@@ -25,11 +26,14 @@ def parse_arguments():
 
 args = parse_arguments()
 
-f = open("original_values.csv", "w")
 df = pd.DataFrame(columns=["reach_id", "distribution", "param0","param1","param2"])
+
 
 distribution = ["genextreme"]
 current_station = 0
+number_of_samples = args.sample_number
+min_valid_years = 4
+max_missing_days = 60
 
 logging.basicConfig(filename="_".join(distribution) + ".log", level=logging.INFO )
 
@@ -39,6 +43,12 @@ if args.considered_sites is not None:
     sites_to_consider = pd.read_csv(args.considered_sites)
 
 nc_files = glob.glob(os.path.join(args.input_directory, "*.nc"))
+
+probabilities = np.linspace(0.01, 0.99, number_of_samples)
+comparison_columns = ["reach_id"] + list(probabilities)
+observed_df = pd.DataFrame(columns=comparison_columns)
+fitted_df = pd.DataFrame(columns=comparison_columns)
+
 
 for nc_file in nc_files:
     print("FILE:", nc_file)
@@ -60,7 +70,8 @@ for nc_file in nc_files:
                 logging.info("%i: not on selected sites" % reach_id)
                 continue
 
-        values = PreProcessing.select_complete_years(station, DS, min_valid_years=4, max_missing_days=60)
+        values = PreProcessing.select_complete_years(station, DS,
+                                                     min_valid_years=min_valid_years, max_missing_days=max_missing_days)
         if values is None:
             # print("%i Nothing to be done, not enough values" % reach_id)
             logging.info("%i: not enough data to continue" % reach_id)
@@ -68,15 +79,11 @@ for nc_file in nc_files:
 
         # Normalize by area
         upstream_area = sites_to_consider.loc[sites_to_consider.NZReach == reach_id]["usArea"].values[0]
-        # log10_upstream_area = np.log10(upstream_area)
-        # values_std = values / log10_upstream_area
-        values_std = values / upstream_area
+        values_std = PreProcessing.sample_data(values, size=number_of_samples)
+        values_std = values_std / upstream_area
 
-        if args.sample_data:
-            values_std = PreProcessing.sample_data(values, size=101)
-
-        # Writing the original values
-        f.write(",".join(list(map(str, values_std))) + "\n")
+        observed_df.loc[current_station,["reach_id"]] = [reach_id]
+        observed_df.loc[current_station, probabilities] = values_std
 
         fitter = DistributionFitter.DistributionFitter(values_std, distributions=distribution)
         fitter.fit()
@@ -99,9 +106,17 @@ for nc_file in nc_files:
         else:
             df.at[current_station, ["param0", "param1", "param2"]] = [None, *fitted_params[best_dist]]
 
+        dist = getattr(scipy.stats, best_dist)
+        distribution_values = dist.ppf(probabilities, *fitted_params[best_dist])
+
+        fitted_df.loc[current_station, "reach_id"] = reach_id
+        fitted_df.loc[current_station, probabilities] = distribution_values
+
         logging.info("%i: succesfully processed" % reach_id)
         current_station += 1
-        # print(df)
+
 
 output_file_name = "_".join(distribution) + ".csv"
+observed_df.to_csv("observed_" + output_file_name)
+fitted_df.to_csv("fitted_" + output_file_name)
 df.to_csv(output_file_name)

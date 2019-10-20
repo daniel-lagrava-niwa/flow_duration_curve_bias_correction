@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
+import os
 
 
 def parse_arguments():
@@ -14,11 +15,12 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
+
 args = parse_arguments()
 federated_data_file = args.federated_data
 
 full_data = pd.read_csv(federated_data_file)
-
+predicted_parameters = full_data.drop(columns=["param0", "param1", "param2"])
 X = full_data[constants.DEFAULT_LOGGED_CHARACTERISTICS]
 
 for i in range(0,3):
@@ -32,8 +34,14 @@ for i in range(0,3):
     print(mean_squared_error(Y,Y_predicted))
     print(r2_score(Y, Y_predicted))
 
-    plt.plot(Y, marker="o")
-    plt.plot(Y_predicted, color='blue', marker="x")
+    plt.plot(Y, "bo")
+    plt.plot(Y_predicted, "rx")
     plt.legend(["actual value", "predicted value"])
-
+    plt.title("Fitting of %s vs. linear regression" % selected_param)
     plt.show()
+
+    predicted_parameters.loc[:, selected_param] = Y_predicted
+
+predicted_parameters.drop(columns=["Unnamed: 0"], inplace=True)
+predicted_parameters.to_csv(os.path.basename(federated_data_file).split(".")[0] + "_predicted.csv")
+
