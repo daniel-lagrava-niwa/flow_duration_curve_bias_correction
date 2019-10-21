@@ -1,12 +1,10 @@
 import pandas as pd
 import argparse
-import constants
-import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import os
+import utils.federate_data
 
 
 def parse_arguments():
@@ -21,7 +19,7 @@ federated_data_file = args.federated_data
 
 full_data = pd.read_csv(federated_data_file)
 predicted_parameters = full_data.drop(columns=["param0", "param1", "param2"])
-X = full_data[constants.DEFAULT_LOGGED_CHARACTERISTICS]
+X = full_data[utils.federate_data.DEFAULT_LOGGED_CHARACTERISTICS]
 
 for i in range(0,3):
     selected_param = "param%i" % i
@@ -44,4 +42,6 @@ for i in range(0,3):
 
 predicted_parameters.drop(columns=["Unnamed: 0"], inplace=True)
 predicted_parameters.to_csv(os.path.basename(federated_data_file).split(".")[0] + "_predicted.csv")
+
+
 

@@ -8,10 +8,10 @@ import os
 import math
 import scipy.stats
 
-import fitting.DistributionFitter as DistributionFitter
-import fitting.DistributionSelector as DistributionSelector
-import fitting.PreProcessing as PreProcessing
-import fitting.Visualization as Visualization
+import utils.DistributionFitter as DistributionFitter
+import utils.DistributionSelector as DistributionSelector
+import utils.PreProcessing as PreProcessing
+import utils.Visualization as Visualization
 
 
 def parse_arguments():
@@ -29,7 +29,7 @@ args = parse_arguments()
 df = pd.DataFrame(columns=["reach_id", "distribution", "param0","param1","param2"])
 
 
-distribution = ["genextreme"]
+distribution = ["lognorm"]
 current_station = 0
 number_of_samples = args.sample_number
 min_valid_years = 4
@@ -82,8 +82,8 @@ for nc_file in nc_files:
         values_std = PreProcessing.sample_data(values, size=number_of_samples)
         values_std = values_std / upstream_area
 
-        observed_df.loc[current_station,["reach_id"]] = [reach_id]
-        observed_df.loc[current_station, probabilities] = values_std
+        # Clean values that are too big
+        # TODO: find out the correct thing to do here
 
         fitter = DistributionFitter.DistributionFitter(values_std, distributions=distribution)
         fitter.fit()
@@ -104,10 +104,22 @@ for nc_file in nc_files:
         if len(fitted_params[best_dist]) == 3:
             df.at[current_station, ["param0", "param1", "param2"]] = [*fitted_params[best_dist]]
         else:
-            df.at[current_station, ["param0", "param1", "param2"]] = [None, *fitted_params[best_dist]]
+            df.at[current_station, ["param0", "param1", "param2"]] = [*fitted_params[best_dist], None]
+
+        print(fitted_params[best_dist])
+        if best_dist == "lognorm" and np.abs(fitted_params[best_dist][0]) > 1.435550:
+            print("One of the parameters is really off, ignoring")
+            continue
+        if best_dist == "lognorm" and fitted_params[best_dist][2] > 1.710760e-07:
+            print("One of the parameters is really off, ignoring")
+            continue
+
+        observed_df.loc[current_station, ["reach_id"]] = [reach_id]
+        observed_df.loc[current_station, probabilities] = values_std
 
         dist = getattr(scipy.stats, best_dist)
         distribution_values = dist.ppf(probabilities, *fitted_params[best_dist])
+        distribution_values = np.sort(distribution_values)[::-1]
 
         fitted_df.loc[current_station, "reach_id"] = reach_id
         fitted_df.loc[current_station, probabilities] = distribution_values

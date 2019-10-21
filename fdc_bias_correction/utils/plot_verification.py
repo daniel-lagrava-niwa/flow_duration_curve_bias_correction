@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import pandas as pd
-import fitting.PreProcessing as PreProcessing
+import PreProcessing
 import yaml
 import matplotlib.pyplot as plt
 
