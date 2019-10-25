@@ -18,7 +18,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_directory", help="directory containing netCDF files containing the river flow")
     parser.add_argument("-considered_sites", help="file containing the sites to consider", default=None)
-    parser.add_argument("--sample_number", type=int, default=101)
+    parser.add_argument("--sample_number", type=int, default=1001)
+    parser.add_argument("--ignored_sites", type=str, default=None)
     parser.add_argument("--create_plots", action='store_true')
     args = parser.parse_args()
     return args
@@ -26,14 +27,21 @@ def parse_arguments():
 
 args = parse_arguments()
 
-df = pd.DataFrame(columns=["reach_id", "distribution", "param0","param1","param2"])
+df = pd.DataFrame(columns=["reach_id", "distribution", "param0","param1","param2", "aic"])
 
 
-distribution = ["lognorm"]
+distribution = ["gumbel_r"]
 current_station = 0
 number_of_samples = args.sample_number
 min_valid_years = 4
 max_missing_days = 60
+
+to_ignore = []
+ignored_sites = args.ignored_sites
+if ignored_sites is not None:
+    with open(ignored_sites) as f:
+        to_ignore = list(map(lambda x: int(x.replace("\n","")),f.readlines()))
+        print(to_ignore)
 
 logging.basicConfig(filename="_".join(distribution) + ".log", level=logging.INFO )
 
@@ -44,11 +52,12 @@ if args.considered_sites is not None:
 
 nc_files = glob.glob(os.path.join(args.input_directory, "*.nc"))
 
-probabilities = np.linspace(0.01, 0.99, number_of_samples)
+probabilities = PreProcessing.get_probabilities()
 comparison_columns = ["reach_id"] + list(probabilities)
 observed_df = pd.DataFrame(columns=comparison_columns)
 fitted_df = pd.DataFrame(columns=comparison_columns)
 
+# f = open("to_ignore.txt","w")
 
 for nc_file in nc_files:
     print("FILE:", nc_file)
@@ -63,6 +72,10 @@ for nc_file in nc_files:
 
         reach_id = int(reach_ids[station])
         print(reach_id)
+
+        if reach_id in to_ignore:
+            print("This is a bad site {}, ignoring".format(reach_id))
+            continue
 
         if args.considered_sites is not None:
             if len(sites_to_consider.loc[sites_to_consider["NZReach"] == reach_id]) == 0:
@@ -91,6 +104,8 @@ for nc_file in nc_files:
         statistical_tests = DistributionSelector.compute_statistical_tests(values_std, fitted_params)
 
         # Select best distribution
+        aic = statistical_tests['aic'].min()
+
         best_dist_row = statistical_tests.loc[statistical_tests.aic == statistical_tests['aic'].min()]
         best_dist = best_dist_row['distribution'].values[0]
 
@@ -102,17 +117,23 @@ for nc_file in nc_files:
 
         df.at[current_station, ["reach_id","distribution"]] = [reach_id, best_dist]
         if len(fitted_params[best_dist]) == 3:
-            df.at[current_station, ["param0", "param1", "param2"]] = [*fitted_params[best_dist]]
+            df.at[current_station, ["param0", "param1", "param2", "aic"]] = [*fitted_params[best_dist], aic]
         else:
-            df.at[current_station, ["param0", "param1", "param2"]] = [*fitted_params[best_dist], None]
+            df.at[current_station, ["param0", "param1", "param2", "aic"]] = [None, *fitted_params[best_dist],  aic]
 
         print(fitted_params[best_dist])
-        if best_dist == "lognorm" and np.abs(fitted_params[best_dist][0]) > 1.435550:
-            print("One of the parameters is really off, ignoring")
-            continue
-        if best_dist == "lognorm" and fitted_params[best_dist][2] > 1.710760e-07:
-            print("One of the parameters is really off, ignoring")
-            continue
+        # if best_dist == "genextreme" and np.abs(fitted_params[best_dist][2]) > 1e-6:
+        #     print("One of the parameters is really off, ignoring")
+        #     f.write("{}\n".format(reach_id))
+        #     continue
+        # if best_dist == "lognorm" and np.abs(fitted_params[best_dist][0]) > 1.435550:
+        #     print("One of the parameters is really off, ignoring")
+        #     f.write("{}\n".format(reach_id))
+        #     continue
+        # if best_dist == "lognorm" and fitted_params[best_dist][2] > 1.710760e-07:
+        #     print("One of the parameters is really off, ignoring")
+        #     f.write("{}\n".format(reach_id))
+        #     continue
 
         observed_df.loc[current_station, ["reach_id"]] = [reach_id]
         observed_df.loc[current_station, probabilities] = values_std

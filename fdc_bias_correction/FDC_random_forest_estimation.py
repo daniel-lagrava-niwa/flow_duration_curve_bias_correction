@@ -39,9 +39,6 @@ for i in np.arange(3):
     print(rf_regressor.score(train_chars, train_params))
     predicted_estimated_params = rf_regressor.predict(test_chars)
 
-    # pd.crosstab(test_params, predicted_estimated_params, rownames=["Actual Result"], colnames=["Predicted Result"])
-
-    # df_predicted = pd.DataFrame(data=predicted_estimated_params, columns=test_params.columns)
     df_predicted.loc[:, fit_candidate] = test_params[fit_candidate]
     df_predicted.loc[:, fit_candidate + "_predicted"] = np.array(predicted_estimated_params)
 
