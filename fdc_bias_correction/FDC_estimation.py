@@ -31,6 +31,7 @@ for i in range(0, 3):
     selected_param = "param%i" % i
     print("Fitting", selected_param)
     Y = full_data[[selected_param]]
+    Y_predicted = np.zeros(Y.values.shape)
     cross_validation_error = 0.
     for index in np.arange(len(Y)):
         X_out = X.loc[index, :].values.reshape(1, -1)
@@ -49,13 +50,15 @@ for i in range(0, 3):
             exit(1)
         regression.fit(X_in, Y_in)
         Y_out_predicted = regression.predict(X_out)
+        Y_predicted[index] = Y_out_predicted
         cross_validation_error += (Y_out_predicted - Y_out) ** 2
+
     cross_validation_error = cross_validation_error / len(Y)
 
-    regression = LinearRegression()
-    regression.fit(X, Y)
-    print(regression.coef_)
-    Y_predicted = regression.predict(X)
+    #regression = LinearRegression()
+    #regression.fit(X, Y)
+    #print(regression.coef_)
+    #Y_predicted = regression.predict(X)
     plt.plot(Y, "bo")
     plt.plot(Y_predicted, "rx")
     plt.legend(["actual value", "predicted value"])
