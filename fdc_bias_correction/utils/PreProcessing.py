@@ -13,23 +13,13 @@ def original_data_from_scaled(scaled_data, mean, std):
     return scaled_data * std + mean
 
 
-def calculate_FDC_from_data(data):
-    copy_data = data.copy() * -1.
-    copy_data.sort()
-    copy_data = -1. * copy_data
-    probabilities = np.linspace(0.01, 1, len(copy_data))
-    return probabilities, copy_data
+def get_probabilities(n=1001):
+    return np.linspace(0.01,0.99,n)
 
 
-def calculate_FDC_from_distribution(distribution, params, size=1000):
-    dist = getattr(scipy.stats, distribution)
-    random_values = np.sort(dist.rvs(*params, size=size))[::-1]
-    probabilities = np.linspace(0.01, 1, len(random_values))
-    return probabilities, random_values
-
-
-def sample_data(original_data, size=1000):
+def sample_data(original_data, size=1001):
     if len(original_data) <= size:
+        print("Problem: not enough data points")
         return original_data.copy()
 
     sampled_values = np.zeros(size)
@@ -64,20 +54,3 @@ def select_complete_years(station, dataset, max_missing_days=30, min_valid_years
 
     return None
 
-
-if __name__ == "__main__":
-    # Testing the cleaning
-    import matplotlib.pyplot as plt
-
-    data = scipy.stats.norm.rvs(size=1000)
-    sampled_data = sample_data(data, size=100)
-
-    p, v = calculate_FDC_from_data(data)
-    p_s, v_s = calculate_FDC_from_data(sampled_data)
-    plt.plot(p, v)
-    plt.plot(p_s, v_s, marker="o")
-    plt.show()
-
-    p, v = calculate_FDC_from_distribution("lognorm", [0.1,0.0,0.25])
-    plt.plot(p, v)
-    plt.show()

@@ -1,7 +1,15 @@
 import pandas as pd
 import numpy as np
 import argparse
-import constants
+
+
+DEFAULT_CHARACTERISTICS = ["NZReach", "usPET", "usLake", "usArea", "usHard", "usAvTCold", "USAvgSlope", "usCatElev", "usCalc",
+                          "usSolarRadSum","usSolarRadWin","usRainDays10", "usRainDays50", "usParticleSize","usAnRainVar","ORDER"]
+
+DEFAULT_LOG_CHARACTERISTICS = ["usArea", "usCatElev", "usAnRainVar", "usRainDays10", "usRainDays50", "usCalc"]
+
+DEFAULT_LOGGED_CHARACTERISTICS = list(set(DEFAULT_CHARACTERISTICS).difference(set(DEFAULT_LOG_CHARACTERISTICS))) \
+                                 + list(map(lambda x: "log" + x, DEFAULT_LOG_CHARACTERISTICS))
 
 
 def plot_3D_params(df):
@@ -24,8 +32,8 @@ def plot_3D_params(df):
 
 
 def federate_characteristics(estimated_parameters, all_site_characteristics,
-                             characteristics_to_use=constants.DEFAULT_CHARACTERISTICS,
-                             characteristics_to_log=constants.DEFAULT_LOG_CHARACTERISTICS, output_name="merged"):
+                             characteristics_to_use=DEFAULT_CHARACTERISTICS,
+                             characteristics_to_log=DEFAULT_LOG_CHARACTERISTICS, output_name="merged"):
 
     merged_df = pd.merge(estimated_parameters, all_site_characteristics[characteristics_to_use]
                          , left_on="reach_id", right_on="NZReach")
@@ -35,10 +43,10 @@ def federate_characteristics(estimated_parameters, all_site_characteristics,
 
     # apply log to given characteristics
     for characteristic in characteristics_to_log:
-        new_name = "log10{}".format(characteristic)
+        new_name = "log{}".format(characteristic)
         selected_characteristics.loc[:, new_name] = np.log10(selected_characteristics[characteristic])
 
-    selected_characteristics.drop(columns=characteristics_to_log)
+    selected_characteristics.drop(columns=characteristics_to_log, inplace=True)
     selected_characteristics.to_csv("{}.csv".format(output_name))
 
 
@@ -50,12 +58,13 @@ def parse_arguments():
     return parser.parse_args()
 
 
-args = parse_arguments()
+if __name__ == "__main__":
+    args = parse_arguments()
 
-estimated_parameters = pd.read_csv(args.estimated_fdc)
-all_site_characteristics = pd.read_csv(args.site_characteristics)
-output_name = args.output_name
+    estimated_parameters = pd.read_csv(args.estimated_fdc)
+    all_site_characteristics = pd.read_csv(args.site_characteristics)
+    output_name = args.output_name
 
-plot_3D_params(estimated_parameters)
+    plot_3D_params(estimated_parameters)
 
-federate_characteristics(estimated_parameters, all_site_characteristics, output_name=args.output_name)
+    federate_characteristics(estimated_parameters, all_site_characteristics, output_name=args.output_name)
