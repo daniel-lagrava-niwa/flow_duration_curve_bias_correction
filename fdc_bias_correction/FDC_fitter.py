@@ -30,7 +30,7 @@ args = parse_arguments()
 df = pd.DataFrame(columns=["reach_id", "distribution", "param0","param1","param2", "aic"])
 
 
-distribution = ["gumbel_r"]
+distribution = ["genpareto"]
 current_station = 0
 number_of_samples = args.sample_number
 min_valid_years = 4
@@ -93,7 +93,7 @@ for nc_file in nc_files:
         # Normalize by area
         upstream_area = sites_to_consider.loc[sites_to_consider.NZReach == reach_id]["usArea"].values[0]
         values_std = PreProcessing.sample_data(values, size=number_of_samples)
-        values_std = values_std / upstream_area
+        values_std = values_std / upstream_area * 1000. * 60 * 60 # units [mm/hour]
 
         # Clean values that are too big
         # TODO: find out the correct thing to do here

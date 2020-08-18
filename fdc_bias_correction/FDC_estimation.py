@@ -62,8 +62,8 @@ for i in range(0, 3):
     plt.plot(Y, "bo")
     plt.plot(Y_predicted, "rx")
     plt.legend(["actual value", "predicted value"])
-    plt.title("Fitting of %s vs. linear regression" % selected_param)
-    plt.show()
+    plt.title("Fitting of %s vs. %s regression" % (selected_param, args.regressor))
+    #plt.show()
 
     print("CrossValidationError =", cross_validation_error)
     print("MSE =", mean_squared_error(Y, Y_predicted))
